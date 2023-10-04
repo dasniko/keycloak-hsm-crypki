@@ -6,7 +6,7 @@ This Extension is based on the [Keycloak HSM Extension](https://github.com/denni
 
 ### Quickstart
 ```
-sudo docker-compose up
+sudo docker-compose up --build
 ```
 
 ### Configure

@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  # http://localhost:8080/admin/master/console/
+  keycloak:
+    build:
+      context: example/keycloak
+      dockerfile: Dockerfile
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: password
+    entrypoint: [ ]
+    command: [ "bash", "-c", "/opt/keycloak/bin/kc.sh start-dev" ]
+    volumes:
+      - ./example/crypki/tls-crt:/opt/keycloak/crypki/tls-crt:ro
+    ports:
+      - "8080:8080"
+      - "8787:8787"
+
+  crypki:
+    image: ghcr.io/denniskniep/crypki:v1.15.0
+    volumes:
+      - ./example/crypki/tls-crt:/opt/crypki/tls-crt:ro
+      - ./example/crypki/shm:/dev/shm
+    ports:
+      - "4443:4443"
