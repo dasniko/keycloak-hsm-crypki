@@ -1,0 +1,27 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'corretto' # See 'Supported distributions' for available options
+          java-version: '17'
+      - name: Build Maven Project
+        run: mvn clean install
+      - name: Create Github release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          generate_release_notes: true
+          files: |
+            ./target/keycloak-hsm-crypki*
+          body: |
+            **This Github draft release has been created.**

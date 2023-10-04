@@ -1,6 +1,6 @@
 # Keycloak HSM Crypki
 Keycloak Extension, which uses [Crypki Service](https://github.com/theparanoids/crypki) for signing with an underlying HSM (Hardware Security Module) or other PKCS #11 device.
-This Extension is based on the [Keycloak HSM Extension](https://github.com/denniskniep/keycloak-hsm).
+This Extension is based on the [Keycloak HSM Extension](https://github.com/denniskniep/keycloak-hsm). The current purpose of this project is to show how to use the [Keycloak HSM Extension](https://github.com/denniskniep/keycloak-hsm).
 
 ## Showcase
 
