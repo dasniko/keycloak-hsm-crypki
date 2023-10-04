@@ -10,7 +10,7 @@ sudo docker-compose up --build
 ```
 
 ### Configure
-* Open http://localhost:8080/admin/master/console/
+* Open http://localhost:8080/admin/master/console/ (Credentails: `admin:password`)
 * Navigate to "Realm Settings > Keys > Providers"
 * Click "Add Provider"
 * Choose "crypki-hsm"
