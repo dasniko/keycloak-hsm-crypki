@@ -6,7 +6,7 @@
 
     <groupId>de.denniskniep</groupId>
     <artifactId>keycloak-hsm-crypki</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -23,7 +23,7 @@
     </licenses>
 
     <build>
-        <finalName>${project.name}</finalName>
+        <finalName>keycloak-hsm-crypki</finalName>
     </build>
 
     <dependencies>
@@ -58,7 +58,7 @@
         <dependency>
             <groupId>de.denniskniep</groupId>
             <artifactId>keycloak-hsm</artifactId>
-            <version>1.0.1</version>
+            <version>1.0.2</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
