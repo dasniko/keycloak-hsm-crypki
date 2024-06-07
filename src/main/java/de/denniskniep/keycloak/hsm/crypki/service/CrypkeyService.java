@@ -22,6 +22,11 @@ public class CrypkeyService implements Closeable {
         return blobKey.getKey();
     }
 
+    public String getX509Certificate() throws IOException {
+        BlobCertResponse cert = httpClient.get("/v3/sig/x509-cert/keys/x509-key", BlobCertResponse.class);
+        return cert.getCert();
+    }
+
     public  byte[] sign(String keyName, String hashAlgorithm, byte[] bytes) throws IOException {
         byte[] encoded = Base64.getEncoder().encode(bytes);
         BlobKeySigningRequest request = new BlobKeySigningRequest();

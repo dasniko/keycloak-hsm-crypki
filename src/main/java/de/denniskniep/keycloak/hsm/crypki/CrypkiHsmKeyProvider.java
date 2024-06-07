@@ -5,17 +5,18 @@ import de.denniskniep.keycloak.hsm.crypki.service.MutualTlsConfig;
 import de.denniskniep.keycloak.hsm.keyprovider.AlgorithmUtils;
 import de.denniskniep.keycloak.hsm.keyprovider.HsmKeyProvider;
 import de.denniskniep.keycloak.hsm.keyprovider.HsmKeyWrapper;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.StringUtils;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.keys.Attributes;
 
-import java.security.KeyFactory;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
@@ -31,6 +32,8 @@ public class CrypkiHsmKeyProvider extends HsmKeyProvider {
     private final CrypkiHsmKeyWrapper key;
     private final String name;
     private final MutualTlsConfig mutualTlsConfig;
+
+    private final CrypkeyService crypkeyService;
 
 
     public CrypkiHsmKeyProvider(ComponentModel model) {
@@ -51,6 +54,8 @@ public class CrypkiHsmKeyProvider extends HsmKeyProvider {
         this.mutualTlsConfig.setClientCertPath(model.get(CrypkiHsmKeyProviderFactory.CLIENT_CRT_PATH_KEY));
         this.mutualTlsConfig.setClientKeyPath(model.get(CrypkiHsmKeyProviderFactory.CLIENT_KEY_PATH_KEY));
         this.mutualTlsConfig.setServerCertPath(model.get(CrypkiHsmKeyProviderFactory.SERVER_CRT_PATH_KEY));
+
+        this.crypkeyService = new CrypkeyService(url, mutualTlsConfig);
 
         if (model.hasNote(KeyWrapper.class.getName())) {
             key = model.getNote(CrypkiHsmKeyWrapper.class.getName());
@@ -73,36 +78,38 @@ public class CrypkiHsmKeyProvider extends HsmKeyProvider {
         key.setName(name);
         key.setMutualTlsConfig(mutualTlsConfig);
         key.setPublicKey(readPublicKey());
+        key.setCertificate(readCertificate());
         return key;
     }
 
-    private RSAPublicKey readPublicKey()  {
-        String pemPublicKey = null;
-        try (CrypkeyService crypkeyService = new CrypkeyService(url, mutualTlsConfig)) {
-            pemPublicKey = crypkeyService.getPublicKey(name);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        String purePublicKeyAsBase64 = pemPublicKey
-                .replace("-----BEGIN PUBLIC KEY-----", "")
-                .replaceAll(System.lineSeparator(), "")
-                .replace("-----END PUBLIC KEY-----", "");
-
-        byte[] encoded = Base64.decodeBase64(purePublicKeyAsBase64);
-
-        KeyFactory keyFactory = null;
+    private X509Certificate readCertificate() {
         try {
-            keyFactory = KeyFactory.getInstance("RSA");
-            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encoded);
-            return (RSAPublicKey) keyFactory.generatePublic(keySpec);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            String certString = crypkeyService.getX509Certificate();
+            return PemUtils.decodeCertificate(certString);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private RSAPublicKey readPublicKey()  {
+        try {
+            String pemPublicKey = crypkeyService.getPublicKey(name);
+            return (RSAPublicKey) PemUtils.decodePublicKey(pemPublicKey);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
     @Override
     public Stream<HsmKeyWrapper> getHsmKeysStream() {
         return Stream.of(key);
+    }
+
+    @Override
+    public void close() {
+        try {
+            crypkeyService.close();
+        } catch (IOException ignored) {
+        }
     }
 }

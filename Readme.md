@@ -58,6 +58,11 @@ Get all keys
 curl -X GET https://localhost:4443/v3/sig/blob/keys
 ```
 
+Get public x509 certificate
+```
+curl -X GET https://localhost:4443/v3/sig/x509-cert/keys/x509-key
+```
+
 Get public key
 ```
 curl -X GET https://localhost:4443/v3/sig/blob/keys/sign-blob-key
