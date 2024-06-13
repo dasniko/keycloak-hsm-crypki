@@ -44,18 +44,6 @@ public class CrypkiHsmKeyProviderFactory implements HsmKeyProviderFactory<Crypki
     public static String NAME_KEY = "name";
     ProviderConfigProperty NAME_PROPERTY = new ProviderConfigProperty(NAME_KEY, "Name", "name of the external key", STRING_TYPE, null);
 
-    public static String CLIENT_CA_PATH_KEY = "client-ca-path";
-    ProviderConfigProperty CLIENT_CA_PATH_PROPERTY = new ProviderConfigProperty(CLIENT_CA_PATH_KEY, "mTLS CA Certificate Path", "Path of the mTLS CA which issues Client Certificates", STRING_TYPE, null);
-
-    public static String CLIENT_CRT_PATH_KEY = "client-cert-path";
-    ProviderConfigProperty CLIENT_CRT_PATH_PROPERTY = new ProviderConfigProperty(CLIENT_CRT_PATH_KEY, "mTLS Client Certificate Path", "Path of the mTLS Client Certificate", STRING_TYPE, null);
-
-    public static String CLIENT_KEY_PATH_KEY = "client-key-path";
-    ProviderConfigProperty CLIENT_KEY_PATH_PROPERTY = new ProviderConfigProperty(CLIENT_KEY_PATH_KEY, "mTLS Client Private Key Path", "Path of the mTLS Client Private Key", STRING_TYPE, null);
-
-    public static String SERVER_CRT_PATH_KEY = "server-cert-path";
-    ProviderConfigProperty SERVER_CRT_PATH_PROPERTY = new ProviderConfigProperty(SERVER_CRT_PATH_KEY, "Server Certificate Path", "Path of the Server Certificate", STRING_TYPE, null);
-
     private List<ProviderConfigProperty> configProperties;
 
     @Override
@@ -68,10 +56,6 @@ public class CrypkiHsmKeyProviderFactory implements HsmKeyProviderFactory<Crypki
                 .property(ALGORITHM_PROPERTY)
                 .property(URL_PROPERTY)
                 .property(NAME_PROPERTY)
-                .property(CLIENT_CA_PATH_PROPERTY)
-                .property(CLIENT_CRT_PATH_PROPERTY)
-                .property(CLIENT_KEY_PATH_PROPERTY)
-                .property(SERVER_CRT_PATH_PROPERTY)
                 .build();
     }
 
@@ -82,16 +66,12 @@ public class CrypkiHsmKeyProviderFactory implements HsmKeyProviderFactory<Crypki
         validation.checkRequired(ALGORITHM_PROPERTY);
         validation.checkRequired(URL_PROPERTY);
         validation.checkRequired(NAME_PROPERTY);
-        validation.checkRequired(CLIENT_CA_PATH_PROPERTY);
-        validation.checkRequired(CLIENT_CRT_PATH_PROPERTY);
-        validation.checkRequired(CLIENT_KEY_PATH_PROPERTY);
-        validation.checkRequired(SERVER_CRT_PATH_PROPERTY);
         model.put(Attributes.KID_KEY, KeycloakModelUtils.generateId());
     }
 
     @Override
     public CrypkiHsmKeyProvider create(KeycloakSession session, ComponentModel model) {
-        return new CrypkiHsmKeyProvider(model);
+        return new CrypkiHsmKeyProvider(session, model);
     }
 
     @Override

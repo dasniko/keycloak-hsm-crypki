@@ -1,7 +1,6 @@
 package de.denniskniep.keycloak.hsm.crypki;
 
 import de.denniskniep.keycloak.hsm.crypki.service.CrypkeyService;
-import de.denniskniep.keycloak.hsm.crypki.service.MutualTlsConfig;
 import de.denniskniep.keycloak.hsm.keyprovider.AlgorithmUtils;
 import de.denniskniep.keycloak.hsm.keyprovider.HsmKeyProvider;
 import de.denniskniep.keycloak.hsm.keyprovider.HsmKeyWrapper;
@@ -12,6 +11,7 @@ import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.keys.Attributes;
+import org.keycloak.models.KeycloakSession;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 
 public class CrypkiHsmKeyProvider extends HsmKeyProvider {
 
+    private final KeycloakSession session;
     private final KeyStatus status;
     private final ComponentModel model;
     private final String url;
@@ -31,16 +32,15 @@ public class CrypkiHsmKeyProvider extends HsmKeyProvider {
     private final String algorithm;
     private final CrypkiHsmKeyWrapper key;
     private final String name;
-    private final MutualTlsConfig mutualTlsConfig;
-
     private final CrypkeyService crypkeyService;
 
 
-    public CrypkiHsmKeyProvider(ComponentModel model) {
+    public CrypkiHsmKeyProvider(KeycloakSession session, ComponentModel model) {
+        this.session = session;
         this.model = model;
         this.kid = model.get(Attributes.KID_KEY);
         this.status = KeyStatus.from(model.get(Attributes.ACTIVE_KEY, true), model.get(Attributes.ENABLED_KEY, true));
-        this.providerPriority = model.get(Attributes.PRIORITY_KEY, 0l);
+        this.providerPriority = model.get(Attributes.PRIORITY_KEY, 0L);
         this.use = Arrays.stream(KeyUse.values())
                 .filter(k -> StringUtils.equals(k.getSpecName(), model.get(Attributes.KEY_USE)))
                 .findFirst()
@@ -49,13 +49,7 @@ public class CrypkiHsmKeyProvider extends HsmKeyProvider {
         this.url = model.get(CrypkiHsmKeyProviderFactory.URL_KEY);
         this.name = model.get(CrypkiHsmKeyProviderFactory.NAME_KEY);
 
-        this.mutualTlsConfig = new MutualTlsConfig();
-        this.mutualTlsConfig.setClientCaPath(model.get(CrypkiHsmKeyProviderFactory.CLIENT_CA_PATH_KEY));
-        this.mutualTlsConfig.setClientCertPath(model.get(CrypkiHsmKeyProviderFactory.CLIENT_CRT_PATH_KEY));
-        this.mutualTlsConfig.setClientKeyPath(model.get(CrypkiHsmKeyProviderFactory.CLIENT_KEY_PATH_KEY));
-        this.mutualTlsConfig.setServerCertPath(model.get(CrypkiHsmKeyProviderFactory.SERVER_CRT_PATH_KEY));
-
-        this.crypkeyService = new CrypkeyService(url, mutualTlsConfig);
+        this.crypkeyService = new CrypkeyService(session, url);
 
         if (model.hasNote(KeyWrapper.class.getName())) {
             key = model.getNote(CrypkiHsmKeyWrapper.class.getName());
@@ -66,7 +60,7 @@ public class CrypkiHsmKeyProvider extends HsmKeyProvider {
     }
 
     private CrypkiHsmKeyWrapper createKeyWrapper(){
-        CrypkiHsmKeyWrapper key = new CrypkiHsmKeyWrapper();
+        CrypkiHsmKeyWrapper key = new CrypkiHsmKeyWrapper(session);
         key.setProviderId(model.getId());
         key.setProviderPriority(this.providerPriority);
         key.setKid(kid);
@@ -76,7 +70,6 @@ public class CrypkiHsmKeyProvider extends HsmKeyProvider {
         key.setStatus(status);
         key.setUrl(url);
         key.setName(name);
-        key.setMutualTlsConfig(mutualTlsConfig);
         key.setPublicKey(readPublicKey());
         key.setCertificate(readCertificate());
         return key;
@@ -103,13 +96,5 @@ public class CrypkiHsmKeyProvider extends HsmKeyProvider {
     @Override
     public Stream<HsmKeyWrapper> getHsmKeysStream() {
         return Stream.of(key);
-    }
-
-    @Override
-    public void close() {
-        try {
-            crypkeyService.close();
-        } catch (IOException ignored) {
-        }
     }
 }

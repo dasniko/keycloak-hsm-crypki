@@ -1,29 +1,29 @@
 package de.denniskniep.keycloak.hsm.crypki.service;
 
+import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.models.KeycloakSession;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Base64;
 
-public class CrypkeyService implements Closeable {
+public class CrypkeyService {
 
-    private final CrypkeyHttpClient httpClient;
+    private final KeycloakSession session;
+    private final String baseUrl;
 
-
-    public CrypkeyService(String url, MutualTlsConfig mutualTlsConfig)  {
-        try {
-            this.httpClient = new CrypkeyHttpClient(url, mutualTlsConfig);
-        } catch (Exception e) {
-            throw new RuntimeException("CrypkeyHttpClient can not be created: " + e.getMessage(), e);
-        }
+    public CrypkeyService(KeycloakSession session, String baseUrl)  {
+        this.session = session;
+        this.baseUrl = baseUrl;
     }
 
     public String getPublicKey(String keyName) throws IOException {
-        BlobKeyResponse blobKey = httpClient.get("/v3/sig/blob/keys/" +keyName, BlobKeyResponse.class);
+        BlobKeyResponse blobKey = SimpleHttp.doGet(baseUrl + "/v3/sig/blob/keys/" + keyName, session).acceptJson().asJson(BlobKeyResponse.class);
         return blobKey.getKey();
     }
 
     public String getX509Certificate() throws IOException {
-        BlobCertResponse cert = httpClient.get("/v3/sig/x509-cert/keys/x509-key", BlobCertResponse.class);
+        BlobCertResponse cert = SimpleHttp.doGet(baseUrl  + "/v3/sig/x509-cert/keys/x509-key", session).acceptJson().asJson(BlobCertResponse.class);
         return cert.getCert();
     }
 
@@ -33,7 +33,7 @@ public class CrypkeyService implements Closeable {
         request.setDigest(new String(encoded));
         request.setHashAlgorithm(convertHashAlgorithmFromJavaToPKCS11(hashAlgorithm));
 
-        BlobKeySigningResponse blobKey = httpClient.post("/v3/sig/blob/keys/" +keyName, request, BlobKeySigningResponse.class);
+        BlobKeySigningResponse blobKey = SimpleHttp.doPost(baseUrl + "/v3/sig/blob/keys/" + keyName, session).json(request).asJson(BlobKeySigningResponse.class);
         String signature = blobKey.getSignature();
 
         return Base64.getDecoder().decode(signature);
@@ -43,8 +43,4 @@ public class CrypkeyService implements Closeable {
         return hashAlgorithm.replace("-", "");
     }
 
-    @Override
-    public void close() throws IOException {
-        httpClient.close();
-    }
 }
